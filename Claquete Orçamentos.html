@@ -1,0 +1,813 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Claquete Orçamentos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: clapperboard stripe band on top, one working column of production stages, sticky price panel beside it on wide screens, price dock at the bottom on phones. */
+:root{
+  --bg:#EEF0F3;
+  --surface:#FFFFFF;
+  --field:#F6F7F9;
+  --ink:#12161C;
+  --muted:#586272;
+  --line:#D2D7DE;
+  --accent:#1F4BFF;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E6ECFF;
+  --good:#12785A;
+  --warn:#A8460A;
+  --stripe-a:#12161C;
+  --stripe-b:#F4F5F7;
+  --dock-bg:#12161C;
+  --dock-fg:#F1F3F6;
+  --f-display:'Barlow Condensed','Arial Narrow',Impact,sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1116;
+    --surface:#151B23;
+    --field:#1A212B;
+    --ink:#E9ECF1;
+    --muted:#98A3B2;
+    --line:#2A323D;
+    --accent:#7B96FF;
+    --accent-ink:#0A0F1F;
+    --accent-soft:#1C2644;
+    --good:#4FCBA2;
+    --warn:#F0B062;
+    --stripe-a:#E9ECF1;
+    --stripe-b:#0D1116;
+    --dock-bg:#E9ECF1;
+    --dock-fg:#0D1116;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1116;
+  --surface:#151B23;
+  --field:#1A212B;
+  --ink:#E9ECF1;
+  --muted:#98A3B2;
+  --line:#2A323D;
+  --accent:#7B96FF;
+  --accent-ink:#0A0F1F;
+  --accent-soft:#1C2644;
+  --good:#4FCBA2;
+  --warn:#F0B062;
+  --stripe-a:#E9ECF1;
+  --stripe-b:#0D1116;
+  --dock-bg:#E9ECF1;
+  --dock-fg:#0D1116;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:16px;
+  line-height:1.5;
+  padding-block:0 104px;
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.slate{
+  height:20px;
+  background:repeating-linear-gradient(-45deg,var(--stripe-a) 0 16px,var(--stripe-b) 16px 32px);
+  border-bottom:2px solid var(--ink);
+}
+.page{
+  width:100%;
+  max-width:1080px;
+  margin-inline:auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+
+.head{padding-block:28px 12px;display:grid;gap:10px}
+.kicker{
+  margin:0;
+  font:500 12px var(--f-mono);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+h1{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:700;
+  font-size:clamp(64px,17vw,112px);
+  line-height:.86;
+  letter-spacing:.005em;
+  text-transform:uppercase;
+}
+.lede{margin:0;max-width:56ch;color:var(--muted);font-size:17px}
+
+.layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:28px;
+  padding-block:12px 8px;
+}
+@media (min-width:920px){
+  .layout{grid-template-columns:minmax(0,1fr) 392px;align-items:start;gap:44px}
+  .result{position:sticky;top:16px}
+  .dock{display:none}
+}
+
+.sec{
+  display:grid;
+  gap:16px;
+  padding-block:22px 24px;
+  border-top:1px solid var(--line);
+  min-width:0;
+}
+h2{
+  margin:0;
+  font-family:var(--f-display);
+  font-weight:600;
+  font-size:26px;
+  line-height:1;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.hint{margin:-8px 0 0;color:var(--muted);font-size:14px;max-width:60ch}
+.row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px;
+}
+.f{display:grid;gap:6px;min-width:0;align-content:start}
+.f>span,.lbl{
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--muted);
+}
+.inp{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  background:var(--field);
+  border:1px solid var(--line);
+  border-radius:6px;
+}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.inp input{
+  flex:1;
+  min-width:0;
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--ink);
+  font:500 16px var(--f-mono);
+  padding:12px;
+  outline:none;
+}
+.inp em{
+  font-style:normal;
+  font-size:13px;
+  color:var(--muted);
+  padding-right:12px;
+  white-space:nowrap;
+}
+input[type=number]{font-variant-numeric:tabular-nums}
+.txt{
+  width:100%;
+  min-height:46px;
+  background:var(--field);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:12px;
+  font:400 16px var(--f-body);
+}
+.txt:focus-visible{border-color:var(--accent);outline-offset:0}
+select.txt{appearance:auto}
+
+.seg{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border:1px solid var(--line);
+  border-radius:6px;
+  overflow:hidden;
+  background:var(--field);
+}
+.seg label{position:relative;display:block;min-width:0}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{
+  display:block;
+  padding:12px 6px;
+  text-align:center;
+  font-size:15px;
+  font-weight:500;
+  border-left:1px solid var(--line);
+}
+.seg label:first-child span{border-left:0}
+.seg input:checked+span{background:var(--ink);color:var(--bg);font-weight:600}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-4px}
+
+.extras{display:grid;gap:10px}
+.xr{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 148px;
+  gap:12px;
+  align-items:center;
+}
+.chk{display:flex;gap:12px;align-items:center;min-height:44px;cursor:pointer;min-width:0}
+.chk input{width:22px;height:22px;flex:none;accent-color:var(--accent);margin:0}
+.chk span{min-width:0}
+.xr .inp input{padding:10px 8px 10px 12px}
+
+details.sec summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  cursor:pointer;
+}
+details.sec summary::-webkit-details-marker{display:none}
+details.sec summary::after{
+  content:"+";
+  font:500 24px var(--f-mono);
+  color:var(--muted);
+}
+details.sec[open] summary::after{content:"\2212"}
+.sec-body{display:grid;gap:16px;padding-top:16px}
+
+.btn{
+  min-height:46px;
+  padding:0 20px;
+  border-radius:6px;
+  border:1px solid var(--accent);
+  background:var(--accent);
+  color:var(--accent-ink);
+  font:600 16px var(--f-body);
+  cursor:pointer;
+}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:active{transform:translateY(1px)}
+
+.result{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:22px 20px;
+  display:grid;
+  gap:16px;
+  min-width:0;
+}
+.eyebrow{
+  margin:0;
+  font:500 12px var(--f-mono);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.price{
+  margin:0;
+  font:500 clamp(38px,11vw,50px)/1 var(--f-mono);
+  letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
+.sub{margin:-6px 0 0;color:var(--muted);font-size:15px}
+.tiers{display:grid;gap:8px}
+.tier{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:2px 12px;
+  align-items:center;
+  text-align:left;
+  padding:12px 14px;
+  background:var(--surface);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:8px;
+  cursor:pointer;
+  font-family:var(--f-body);
+}
+.tier[aria-pressed="true"]{
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+  background:var(--accent-soft);
+}
+.tier b{font-family:var(--f-display);font-size:20px;letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.tier small{grid-column:1;color:var(--muted);font-size:13px}
+.tier .tp{grid-column:2;grid-row:1 / span 2;font:500 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.note{
+  margin:0;
+  padding:10px 12px;
+  border-radius:6px;
+  background:var(--field);
+  border:1px solid var(--line);
+  color:var(--warn);
+  font-size:14px;
+}
+h3{
+  margin:6px 0 0;
+  font-family:var(--f-display);
+  font-weight:600;
+  font-size:20px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.break{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.bl{display:flex;justify-content:space-between;gap:12px;font-size:15px}
+.bl span{min-width:0}
+.bl b{font:500 15px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bl small{color:var(--muted);font:400 12px var(--f-mono);margin-left:6px}
+.meter{height:6px;margin-top:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.break .profit .meter i{background:var(--good)}
+.break .profit b{color:var(--good)}
+.stats{
+  margin:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:12px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+.stats div{display:grid;gap:2px;min-width:0}
+.stats dt{font-size:13px;color:var(--muted)}
+.stats dd{margin:0;font:500 20px var(--f-mono);font-variant-numeric:tabular-nums}
+.stats dd small{display:block;font:400 12px var(--f-body);color:var(--muted)}
+
+.proposal{display:grid;gap:16px;padding-block:28px 8px;border-top:1px solid var(--line);margin-top:20px}
+textarea.out{
+  width:100%;
+  min-height:360px;
+  resize:vertical;
+  background:var(--field);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:14px;
+  font:400 14px/1.6 var(--f-mono);
+}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.foot{margin:0;padding-block:20px 8px;color:var(--muted);font-size:13px;max-width:70ch}
+
+.dock{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background:var(--dock-bg);
+  color:var(--dock-fg);
+  padding-top:10px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.dock p{margin:0;min-width:0}
+.dock .dl{font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.dock .dp{font:500 24px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.dock button{
+  flex:none;
+  min-height:44px;
+  padding:0 16px;
+  border-radius:6px;
+  border:1px solid currentColor;
+  background:transparent;
+  color:inherit;
+  font:600 15px var(--f-body);
+  cursor:pointer;
+}
+@media (prefers-reduced-motion:reduce){
+  .btn:active{transform:none}
+}
+</style>
+
+<div class="slate" aria-hidden="true"></div>
+
+<header class="page head">
+  <p class="kicker">Orçamento de vídeo</p>
+  <h1>Claquete</h1>
+  <p class="lede">Descreva o trabalho. A Claquete calcula o preço mínimo, o recomendado e o premium, mostra para onde o dinheiro vai e escreve a proposta para o cliente.</p>
+</header>
+
+<main class="page layout">
+  <form id="form" autocomplete="off">
+    <section class="sec">
+      <h2>Projeto</h2>
+      <p class="hint">Ao trocar o tipo, os campos abaixo recebem valores iniciais para você ajustar.</p>
+      <div class="row">
+        <label class="f" for="s-tipo"><span>Tipo de vídeo</span><select class="txt" id="s-tipo" data-s="tipo"></select></label>
+        <div id="proj-fields" class="row" style="grid-column:1/-1"></div>
+      </div>
+      <div class="row">
+        <label class="f" for="s-urg"><span>Prazo de entrega</span><select class="txt" id="s-urg" data-s="urg"></select></label>
+        <label class="f" for="s-uso"><span>Onde o vídeo vai passar</span><select class="txt" id="s-uso" data-s="uso"></select></label>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>Captação</h2>
+      <div id="cap-fields" class="row"></div>
+    </section>
+
+    <section class="sec">
+      <h2>Pós-produção</h2>
+      <div class="f">
+        <span class="lbl" id="cpx-l">Complexidade da edição</span>
+        <div class="seg" role="radiogroup" aria-labelledby="cpx-l">
+          <label><input type="radio" name="cpx" value="0"><span>Simples</span></label>
+          <label><input type="radio" name="cpx" value="1"><span>Média</span></label>
+          <label><input type="radio" name="cpx" value="2"><span>Alta</span></label>
+        </div>
+      </div>
+      <div id="pos-fields" class="row"></div>
+    </section>
+
+    <section class="sec">
+      <h2>Extras</h2>
+      <p class="hint">Marque o que entra neste trabalho. Os preços são seus e ficam salvos neste aparelho.</p>
+      <div id="extras" class="extras"></div>
+    </section>
+
+    <details class="sec" open>
+      <summary><h2>Seus valores</h2></summary>
+      <div class="sec-body">
+        <p class="hint" style="margin:0">Valores iniciais de partida. Troque pelos seus: eles definem todo o cálculo.</p>
+        <div id="rate-fields" class="row"></div>
+        <div class="actions"><button class="btn ghost" type="button" id="reset">Restaurar valores iniciais</button></div>
+      </div>
+    </details>
+  </form>
+
+  <aside class="result" id="result" aria-live="polite">
+    <p class="eyebrow" id="r-label">Preço recomendado</p>
+    <p class="price" id="r-price">R$ 0</p>
+    <p class="sub" id="r-sub"></p>
+    <div class="tiers" role="group" aria-label="Escolha o preço que vai na proposta" id="tiers"></div>
+    <p class="note" id="r-note" hidden></p>
+    <h3>Para onde vai o dinheiro</h3>
+    <ul class="break" id="r-break"></ul>
+    <dl class="stats" id="r-stats"></dl>
+  </aside>
+</main>
+
+<section class="page proposal">
+  <h2>Proposta</h2>
+  <p class="hint" style="margin:0">Preencha os nomes e copie o texto. Ele usa o preço escolhido no painel de resultado.</p>
+  <div class="row">
+    <label class="f" for="t-produtora"><span>Seu nome ou produtora</span><input class="txt" id="t-produtora" data-t="produtora" type="text" placeholder="Ex.: Studio Aurora"></label>
+    <label class="f" for="t-cliente"><span>Cliente</span><input class="txt" id="t-cliente" data-t="cliente" type="text" placeholder="Ex.: Padaria Bom Grão"></label>
+    <label class="f" for="t-projeto"><span>Nome do projeto</span><input class="txt" id="t-projeto" data-t="projeto" type="text" placeholder="Ex.: Vídeo de apresentação 2026"></label>
+  </div>
+  <textarea class="out" id="out" readonly aria-label="Texto da proposta"></textarea>
+  <div class="actions">
+    <button class="btn" type="button" id="copy">Copiar proposta</button>
+    <span id="copy-msg" class="hint" style="margin:0" role="status"></span>
+  </div>
+  <p class="foot">Os valores e escolhas ficam salvos só neste navegador. As horas de edição por minuto de vídeo são estimativas iniciais para cada tipo de trabalho; ajuste a complexidade e os valores até refletirem a sua rotina.</p>
+</section>
+
+<div class="dock" id="dock">
+  <p><span class="dl" id="d-label">Recomendado</span><br><span class="dp" id="d-price">R$ 0</span></p>
+  <button type="button" id="d-go">Ver detalhes</button>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var BRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+  var NUM = new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1});
+  var money = function(v){ return BRL.format(Math.round(v)); };
+
+  var TYPES = {
+    social:{nome:'Vídeo para redes sociais',base:2,perMin:6,dur:1,dias:0.5,assist:0,pre:2},
+    institucional:{nome:'Vídeo institucional',base:8,perMin:10,dur:2,dias:1,assist:1,pre:6},
+    comercial:{nome:'Filme publicitário',base:16,perMin:30,dur:0.5,dias:2,assist:2,pre:16},
+    casamento:{nome:'Filme de casamento',base:16,perMin:4,dur:5,dias:1,assist:1,pre:4},
+    clipe:{nome:'Videoclipe',base:12,perMin:12,dur:3.5,dias:1.5,assist:2,pre:12},
+    evento:{nome:'Cobertura de evento',base:6,perMin:5,dur:3,dias:1,assist:1,pre:3},
+    documentario:{nome:'Documentário',base:30,perMin:15,dur:10,dias:4,assist:1,pre:20}
+  };
+  var CPX = {'0':0.8,'1':1,'2':1.4};
+  var URG = {'0':0,'1':0.25,'2':0.5};
+  var URG_L = {'0':'Prazo normal, sem acréscimo','1':'Prazo curto, +25%','2':'Urgente, +50%'};
+  var USO = {'0':0,'1':0.2,'2':0.4,'3':1};
+  var USO_L = {'0':'Redes sociais e site, sem acréscimo','1':'Anúncios online pagos, +20%','2':'TV regional, +40%','3':'TV nacional, +100%'};
+  var EXTRAS = [
+    ['drone','Drone',600],
+    ['motion','Motion graphics e vinhetas',900],
+    ['locucao','Locução profissional',450],
+    ['legendas','Legendas e tradução',250],
+    ['trilha','Trilha musical licenciada',300],
+    ['cor','Correção de cor avançada',500],
+    ['vertical','Cortes verticais para redes',450]
+  ];
+  var TIERS = ['piso','rec','prem'];
+
+  var NUMF = {
+    proj:[['dur','Duração final','min',0.5]],
+    cap:[['dias','Diárias de gravação','diárias',0.5],['assist','Assistentes na equipe','pessoas',1],['pre','Pré-produção e planejamento','horas',1],['km','Deslocamento, só ida','km',10],['hosp','Hospedagem e alimentação','R$',50]],
+    pos:[['revs','Rodadas de revisão inclusas','rodadas',1]]
+  };
+  var RATEF = [
+    ['hora','Sua hora de trabalho','R$/h',5],
+    ['operador','Sua diária de gravação','R$',50],
+    ['assist','Diária de assistente','R$',50],
+    ['equip','Equipamento por diária','R$',50],
+    ['km','Custo por km rodado','R$/km',0.1],
+    ['over','Custos fixos (software, internet, contador)','%',1],
+    ['imp','Impostos sobre a nota','%',0.5],
+    ['marg','Margem de lucro desejada','%',1]
+  ];
+
+  function defaults(){
+    var ex = {}, exp = {};
+    EXTRAS.forEach(function(e){ ex[e[0]] = false; exp[e[0]] = e[2]; });
+    return {
+      tipo:'institucional', dur:2, dias:1, assist:1, pre:6, km:0, hosp:0, revs:2,
+      cpx:'1', urg:'0', uso:'0', tier:'rec',
+      extras:ex,
+      rates:{hora:80, operador:900, assist:350, equip:400, km:1.8, over:15, imp:6, marg:25, extra:exp},
+      produtora:'', cliente:'', projeto:''
+    };
+  }
+  var state = defaults();
+
+  function merge(d,s){
+    if(!s || typeof s !== 'object') return;
+    Object.keys(d).forEach(function(k){
+      if(!(k in s)) return;
+      if(d[k] && typeof d[k] === 'object'){ merge(d[k], s[k]); }
+      else if(typeof d[k] === typeof s[k]){ d[k] = s[k]; }
+    });
+  }
+  function sanitize(){
+    if(!TYPES[state.tipo]) state.tipo = 'institucional';
+    if(TIERS.indexOf(state.tier) < 0) state.tier = 'rec';
+    if(CPX[state.cpx] == null) state.cpx = '1';
+    if(URG[state.urg] == null) state.urg = '0';
+    if(USO[state.uso] == null) state.uso = '0';
+  }
+  var KEY = 'claquete.v1';
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw) merge(state, JSON.parse(raw));
+    }catch(e){}
+    sanitize();
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function fieldHTML(cfg, prefix, attr){
+    var k = cfg[0];
+    return '<label class="f" for="'+prefix+'-'+k+'"><span>'+cfg[1]+'</span>'+
+      '<div class="inp"><input id="'+prefix+'-'+k+'" data-'+attr+'="'+k+'" type="number" inputmode="decimal" min="0" step="'+cfg[3]+'"><em>'+cfg[2]+'</em></div></label>';
+  }
+  function build(){
+    $('proj-fields').innerHTML = NUMF.proj.map(function(c){ return fieldHTML(c,'f','k'); }).join('');
+    $('cap-fields').innerHTML = NUMF.cap.map(function(c){ return fieldHTML(c,'f','k'); }).join('');
+    $('pos-fields').innerHTML = NUMF.pos.map(function(c){ return fieldHTML(c,'f','k'); }).join('');
+    $('rate-fields').innerHTML = RATEF.map(function(c){ return fieldHTML(c,'r','r'); }).join('');
+    $('extras').innerHTML = EXTRAS.map(function(e){
+      var k = e[0];
+      return '<div class="xr"><label class="chk" for="x-'+k+'"><input type="checkbox" id="x-'+k+'" data-x="'+k+'"><span>'+e[1]+'</span></label>'+
+        '<div class="inp"><input id="xp-'+k+'" data-xp="'+k+'" type="number" inputmode="decimal" min="0" step="10" aria-label="Preço de '+e[1]+'"><em>R$</em></div></div>';
+    }).join('');
+    $('s-tipo').innerHTML = Object.keys(TYPES).map(function(k){ return '<option value="'+k+'">'+TYPES[k].nome+'</option>'; }).join('');
+    $('s-urg').innerHTML = Object.keys(URG_L).map(function(k){ return '<option value="'+k+'">'+URG_L[k]+'</option>'; }).join('');
+    $('s-uso').innerHTML = Object.keys(USO_L).map(function(k){ return '<option value="'+k+'">'+USO_L[k]+'</option>'; }).join('');
+  }
+
+  function syncInputs(){
+    var i, els;
+    els = document.querySelectorAll('[data-k]');
+    for(i=0;i<els.length;i++) els[i].value = state[els[i].dataset.k];
+    els = document.querySelectorAll('[data-r]');
+    for(i=0;i<els.length;i++) els[i].value = state.rates[els[i].dataset.r];
+    els = document.querySelectorAll('[data-xp]');
+    for(i=0;i<els.length;i++) els[i].value = state.rates.extra[els[i].dataset.xp];
+    els = document.querySelectorAll('[data-x]');
+    for(i=0;i<els.length;i++) els[i].checked = !!state.extras[els[i].dataset.x];
+    els = document.querySelectorAll('[data-t]');
+    for(i=0;i<els.length;i++) els[i].value = state[els[i].dataset.t];
+    $('s-tipo').value = state.tipo;
+    $('s-urg').value = state.urg;
+    $('s-uso').value = state.uso;
+    els = document.querySelectorAll('input[name="cpx"]');
+    for(i=0;i<els.length;i++) els[i].checked = (els[i].value === state.cpx);
+  }
+
+  function num(el){
+    var v = el.valueAsNumber;
+    return (isNaN(v) || v < 0) ? 0 : v;
+  }
+  function ceil10(v){ return Math.ceil(v/10)*10; }
+  function clamp(v,a,b){ return Math.min(b, Math.max(a, v)); }
+
+  function calc(){
+    var s = state, r = s.rates, t = TYPES[s.tipo];
+    var editH = (t.base + t.perMin * s.dur) * CPX[s.cpx];
+    var revH = s.revs * 0.08 * editH;
+    var shootH = s.dias * 10;
+    var own = s.pre * r.hora + s.dias * r.operador + (editH + revH) * r.hora;
+    var crew = s.dias * s.assist * r.assist;
+    var gear = s.dias * r.equip;
+    var extras = 0;
+    EXTRAS.forEach(function(e){ if(s.extras[e[0]]) extras += r.extra[e[0]]; });
+    var trip = s.km * 2 * r.km + s.hosp;
+    var direct = own + crew + gear + extras + trip;
+    var over = direct * clamp(r.over,0,60) / 100;
+    var pre = direct + over;
+    var mult = (1 + URG[s.urg]) * (1 + USO[s.uso]);
+    var cost = pre * mult;
+    var markup = cost - pre;
+    var imp = clamp(r.imp,0,30) / 100;
+    var marg = clamp(r.marg,0,60) / 100;
+    function price(m){ return ceil10(cost / Math.max(0.2, 1 - imp - m)); }
+    var tiers = { piso:price(0), rec:price(marg), prem:price(marg + 0.15) };
+    var P = tiers[s.tier];
+    var imposto = P * imp;
+    var lucro = P - imposto - cost;
+    var rend = P - imposto - crew - gear - extras - trip - over;
+    var hours = s.pre + shootH + editH + revH;
+    return {
+      editH:editH, revH:revH, shootH:shootH, hours:hours,
+      own:own, crew:crew, gear:gear, extras:extras, trip:trip, over:over, markup:markup,
+      cost:cost, imp:imp, marg:marg, tiers:tiers, P:P, imposto:imposto, lucro:lucro,
+      rendHora: hours > 0 ? rend / hours : 0
+    };
+  }
+
+  var TIER_L = {piso:'Piso', rec:'Recomendado', prem:'Premium'};
+  function render(){
+    var c = calc(), s = state;
+    var tierDesc = {
+      piso:'Cobre custos e impostos, sem lucro',
+      rec:'Margem de '+NUM.format(c.marg*100)+'%',
+      prem:'Margem de '+NUM.format((c.marg+0.15)*100)+'%'
+    };
+    $('tiers').innerHTML = TIERS.map(function(k){
+      return '<button type="button" class="tier" data-tier="'+k+'" aria-pressed="'+(s.tier===k)+'">'+
+        '<b>'+TIER_L[k]+'</b><span class="tp">'+money(c.tiers[k])+'</span><small>'+tierDesc[k]+'</small></button>';
+    }).join('');
+    $('r-label').textContent = 'Preço ' + TIER_L[s.tier].toLowerCase();
+    $('r-price').textContent = money(c.P);
+    $('d-label').textContent = TIER_L[s.tier];
+    $('d-price').textContent = money(c.P);
+    var pct = c.P > 0 ? (c.lucro / c.P * 100) : 0;
+    $('r-sub').textContent = 'Lucro de ' + money(c.lucro) + ' (' + NUM.format(pct) + '% do valor)';
+    var note = $('r-note');
+    if(s.tier === 'piso'){
+      note.hidden = false;
+      note.textContent = 'Neste valor você não ganha nada além do que já cobrou pelas suas horas. Use só em um trabalho que traga outros clientes.';
+    } else { note.hidden = true; }
+
+    var rows = [
+      ['Seu trabalho (pré, gravação, edição, revisões)', c.own],
+      ['Assistentes', c.crew],
+      ['Equipamento', c.gear],
+      ['Extras', c.extras],
+      ['Deslocamento e hospedagem', c.trip],
+      ['Custos fixos', c.over],
+      ['Acréscimo de prazo e uso da imagem', c.markup],
+      ['Impostos', c.imposto],
+      ['Lucro', c.lucro]
+    ];
+    $('r-break').innerHTML = rows.filter(function(r){ return r[1] > 0.5; }).map(function(r){
+      var share = c.P > 0 ? r[1] / c.P * 100 : 0;
+      var cls = r[0] === 'Lucro' ? ' class="profit"' : '';
+      return '<li'+cls+'><div class="bl"><span>'+r[0]+'</span><b>'+money(r[1])+'<small>'+NUM.format(share)+'%</small></b></div>'+
+        '<div class="meter"><i style="width:'+Math.min(100,share).toFixed(1)+'%"></i></div></li>';
+    }).join('');
+
+    var below = c.rendHora < s.rates.hora;
+    $('r-stats').innerHTML =
+      '<div><dt>Horas de trabalho</dt><dd>'+NUM.format(c.hours)+' h<small>pré '+NUM.format(s.pre)+' h, gravação '+NUM.format(c.shootH)+' h, edição '+NUM.format(c.editH + c.revH)+' h</small></dd></div>'+
+      '<div><dt>Você recebe por hora</dt><dd>'+money(c.rendHora)+'<small>'+(below ? 'abaixo da sua hora de '+money(s.rates.hora) : 'depois de impostos e custos')+'</small></dd></div>';
+
+    $('out').value = proposal(c);
+    save();
+  }
+
+  function dias(n){
+    if(n === 0.5) return 'meia diária';
+    if(n === 1) return '1 diária';
+    return NUM.format(n) + ' diárias';
+  }
+  function durTxt(m){
+    if(m < 1) return Math.round(m * 60) + ' segundos';
+    return NUM.format(m) + ' min';
+  }
+  function proposal(c){
+    var s = state, t = TYPES[s.tipo], L = [];
+    var nome = s.produtora.trim(), cli = s.cliente.trim(), proj = s.projeto.trim();
+    L.push('PROPOSTA COMERCIAL' + (nome ? ' | ' + nome : ''));
+    if(cli) L.push('Cliente: ' + cli);
+    L.push('Projeto: ' + (proj || t.nome));
+    L.push('');
+    L.push('ESCOPO');
+    L.push('- ' + t.nome + ' com cerca de ' + durTxt(s.dur));
+    L.push('- Pré-produção e planejamento da captação');
+    if(s.dias > 0){
+      var pessoas = 1 + s.assist;
+      L.push('- ' + dias(s.dias) + ' de gravação com equipe de ' + pessoas + (pessoas === 1 ? ' profissional' : ' profissionais') + ' e equipamento incluso');
+    }
+    L.push('- Edição, finalização e correção de cor básica');
+    EXTRAS.forEach(function(e){ if(s.extras[e[0]]) L.push('- ' + e[1]); });
+    if(s.km > 0) L.push('- Deslocamento até o local (' + NUM.format(s.km) + ' km)');
+    if(s.hosp > 0) L.push('- Hospedagem e alimentação da equipe');
+    L.push('- ' + (s.revs === 1 ? '1 rodada de revisão' : s.revs + ' rodadas de revisão'));
+    L.push('');
+    L.push('PRAZO: ' + URG_L[s.urg].split(',')[0]);
+    L.push('USO DA IMAGEM: ' + USO_L[s.uso].split(',')[0]);
+    L.push('');
+    L.push('INVESTIMENTO: ' + money(c.P));
+    L.push('');
+    L.push('CONDIÇÕES');
+    L.push('- 50% na aprovação da proposta e 50% na entrega do material final');
+    L.push('- Revisões além das previstas serão orçadas à parte');
+    L.push('- Validade da proposta: 7 dias');
+    return L.join('\n');
+  }
+
+  function applyPreset(){
+    var t = TYPES[state.tipo];
+    state.dur = t.dur; state.dias = t.dias; state.assist = t.assist; state.pre = t.pre;
+  }
+
+  var form = $('form');
+  form.addEventListener('input', function(e){
+    var t = e.target, d = t.dataset;
+    if(d.k){ state[d.k] = num(t); }
+    else if(d.r){ state.rates[d.r] = num(t); }
+    else if(d.xp){ state.rates.extra[d.xp] = num(t); }
+    else if(d.x){ state.extras[d.x] = t.checked; }
+    else if(d.s){
+      state[d.s] = t.value;
+      if(d.s === 'tipo'){ applyPreset(); syncInputs(); }
+    }
+    else if(t.name === 'cpx'){ state.cpx = t.value; }
+    else return;
+    render();
+  });
+  document.querySelectorAll('[data-t]').forEach(function(el){
+    el.addEventListener('input', function(){ state[el.dataset.t] = el.value; render(); });
+  });
+  $('tiers').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tier]');
+    if(!b) return;
+    state.tier = b.dataset.tier;
+    render();
+  });
+  $('reset').addEventListener('click', function(){
+    state = defaults();
+    syncInputs();
+    render();
+  });
+
+  var msgTimer;
+  $('copy').addEventListener('click', function(){
+    var ta = $('out'), msg = $('copy-msg');
+    function done(t){
+      msg.textContent = t;
+      clearTimeout(msgTimer);
+      msgTimer = setTimeout(function(){ msg.textContent = ''; }, 3000);
+    }
+    function fallback(){
+      ta.focus(); ta.select();
+      done('Texto selecionado. Use o menu do aparelho para copiar.');
+    }
+    try{
+      navigator.clipboard.writeText(ta.value).then(function(){ done('Proposta copiada.'); }, fallback);
+    }catch(err){ fallback(); }
+  });
+
+  $('d-go').addEventListener('click', function(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('result').scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'start'});
+  });
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(en){
+      $('dock').hidden = en[0].isIntersecting;
+    }, {threshold:0.15}).observe($('result'));
+  }
+
+  build();
+  load();
+  syncInputs();
+  render();
+})();
+</script>
+
+</body></html>
